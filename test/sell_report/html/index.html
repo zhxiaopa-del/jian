@@ -1,0 +1,454 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能聊天助手</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .chat-container {
+            height: calc(100vh - 120px);
+        }
+        .message-bubble {
+            transition: all 0.3s ease;
+        }
+        .message-bubble:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .scrollbar-hidden::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hidden {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease forwards;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            animation: modalOpen 0.4s ease;
+        }
+        @keyframes modalOpen {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+<div class="container mx-auto px-4 py-6 max-w-4xl">
+    <!-- Header -->
+    <header class="text-center mb-8">
+        <h1 class="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+            </i>智能聊天助手
+        </h1>
+        <p class="text-gray-600 mt-2">与智能助手实时对话，完善信息表单</p>
+    </header>
+
+    <!-- Chat Container -->
+    <div class="bg-white rounded-2xl shadow-xl overflow-hidden chat-container flex flex-col">
+        <!-- Messages Area -->
+        <div id="messagesContainer" class="flex-1 p-4 overflow-y-auto scrollbar-hidden bg-gradient-to-b from-gray-50 to-white">
+            <!-- Messages will be inserted here by JavaScript -->
+            <div class="text-center py-8 text-gray-500">
+                <p>欢迎来到智能聊天助手！</p>
+                <p class="text-sm mt-2">请输入消息开始对话</p>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="border-t border-gray-200 p-4 bg-white">
+            <div class="flex items-center">
+                <input
+                        type="text"
+                        id="messageInput"
+                        placeholder="输入消息..."
+                        class="flex-1 border border-gray-300 rounded-l-full py-3 px-5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        autocomplete="off"
+                >
+                <button
+                        id="sendButton"
+                        class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-r-full px-6 py-3 font-medium transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                    <i class="fas fa-paper-plane mr-2"></i>发送
+                </button>
+            </div>
+            <div class="mt-3 text-xs text-gray-500 flex justify-between">
+                <span>按 Enter 发送消息</span>
+                <span>Shift + Enter 换行</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Panel -->
+
+</div>
+
+<!-- Modal Form -->
+<div id="formModal" class="modal">
+    <div class="modal-content">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">请补全信息</h3>
+                <button id="closeModal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="infoForm">
+                <div id="formFields" class="space-y-4">
+                    <!-- Form fields will be inserted here by JavaScript -->
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="cancelForm" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                        取消
+                    </button>
+                    <button type="submit"  onclick="sendMessage()"  class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700">
+                        提交
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // DOM Elements
+    const messagesContainer = document.getElementById('messagesContainer');
+    const messageInput = document.getElementById('messageInput');
+    const sendButton = document.getElementById('sendButton');
+    const formModal = document.getElementById('formModal');
+    const infoForm = document.getElementById('infoForm');
+    const formFields = document.getElementById('formFields');
+    const closeModal = document.getElementById('closeModal');
+    const cancelForm = document.getElementById('cancelForm');
+
+    // Load chat history from localStorage
+    let chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+
+    // Initialize chat
+    function initChat() {
+        renderMessages();
+        scrollToBottom();
+    }
+
+    // Render all messages
+    function renderMessages() {
+        messagesContainer.innerHTML = '';
+        if (chatHistory.length === 0) {
+            messagesContainer.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <p>欢迎来到智能聊天助手！</p>
+                        <p class="text-sm mt-2">请输入消息开始对话</p>
+                    </div>
+                `;
+            return;
+        }
+
+        chatHistory.forEach((msg, index) => {
+            addMessageToDOM(msg.text, msg.isUser, false);
+        });
+    }
+
+    // Add message to DOM
+    function addMessageToDOM(text, isUser, animate = true) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message-bubble flex mb-4 ${animate ? 'fade-in' : ''} ${isUser ? 'justify-end' : 'justify-start'}`;
+
+        const bubbleClass = isUser
+            ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
+            : 'bg-gray-100 text-gray-800';
+
+        messageDiv.innerHTML = `
+                <div class="${bubbleClass} rounded-2xl px-4 py-3 max-w-xs md:max-w-md lg:max-w-lg break-words">
+                    ${text}
+                </div>
+            `;
+
+        messagesContainer.appendChild(messageDiv);
+    }
+
+    // Scroll to bottom of messages container
+    function scrollToBottom() {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // Save chat history to localStorage
+    function saveChatHistory() {
+        localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+    }
+
+    // Show form modal with required fields
+    function showFormModal(fields) {
+        formFields.innerHTML = '';
+
+        fields.forEach(field => {
+            const fieldDiv = document.createElement('div');
+            fieldDiv.className = 'space-y-2';
+
+            if (field.type === 'select') {
+                fieldDiv.innerHTML = `
+                        <label class="block text-sm font-medium text-gray-700">${field.label}</label>
+                        <select
+                            name="${field.name}"
+                            required
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="">请选择${field.label}</option>
+                            ${field.options.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('')}
+                        </select>
+                    `;
+            } else {
+                fieldDiv.innerHTML = `
+                        <!-- 修改了下面这一行，增加了 || 'none' -->
+                        <label class="block text-sm font-medium text-gray-700" style="display:${field.isshowAll || 'none'}">${field.label}</label>
+                        <input
+                            type="${field.type || 'text'}"
+                            name="${field.name}"
+                            value="${field.default}"
+                            placeholder="请输入${field.label}"
+                            ${field.isshow ? 'required' : ''} 
+                            style="display:${field.isshowAll || 'none'}" 
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                    `;
+            }
+
+            formFields.appendChild(fieldDiv);
+        });
+
+        formModal.style.display = 'flex';
+    }
+
+    // Close modal
+    function closeFormModal() {
+        formModal.style.display = 'none';
+    }
+
+    // Simulate API request to backend
+    async function simulateBackendRequest(userMessage) {
+        // Simulate different responses based on user input
+		// 构造包含context参数的URL
+		  const url = new URL('http://localhost:8765/chat_extraction');
+		  url.searchParams.append('context', userMessage);
+		
+		  try {
+		    const response = await fetch(url, {
+		      method: 'GET',
+		      headers: {
+		        'Accept': 'application/json'
+		      }
+		    });
+			
+		    if (!response.ok) {
+		      throw new Error(`HTTP error! status: ${response.status}`);
+		    }
+		
+		    const data = await response.json();
+			console.log('请求完成，数据:', data.data[0].公司名称);
+			
+		   if (!data.data[0].公司名称  ||
+		   !data.data[0].负责人 ||
+		    !data.data[0].项目类型  ||
+		    !data.data[0].项目名称  ) {
+		       return {
+		           needForm: true,
+		           fields: [
+		               { name: '负责人', label: '负责人', type: 'text',default: data.data[0].负责人  ,isshow: true,isshowAll: true},
+		               { name: '公司名称', label: '公司名称', type: 'text' ,default: data.data[0].公司名称,isshow: true,isshowAll: true},
+		               { name: '项目类型', label: '项目类型', type: 'text' ,default: data.data[0].项目类型,isshow: true,isshowAll: true},
+		               { name: '项目名称', label: '项目名称', type: 'text' ,default: data.data[0].项目名称,isshow: true,isshowAll: true},
+		               { name: '月初预计可能回款', label: '月初预计可能回款', type: 'text' ,default: data.data[0].月初预计可能回款,isshow: false},
+					   { name: '月初预计确定回款', label: '月初预计确定回款', type: 'text' ,default: data.data[0].月初预计确定回款,isshow: false},
+					   { name: '可能回款', label: '可能回款', type: 'text' ,default: data.data[0].可能回款,isshow: false,},
+					   { name: '确定回款', label: '确定回款', type: 'text' ,default: data.data[0].确定回款,isshow: false,},
+					   { name: '实际回款', label: '实际回款', type: 'text' ,default: data.data[0].实际回款,isshow: false,},
+					   { name: '回款节点确定', label: '回款节点确定', type: 'text' ,default: data.data[0].回款节点确定,isshow: false,},
+					   { name: '回款节点', label: '回款节点', type: 'text' ,default: data.data[0].回款节点,isshow: false,},
+					   { name: '未回款金额', label: '未回款金额', type: 'text' ,default: data.data[0].未回款金额,isshow: false,},
+					   { name: '未完成原因', label: '未完成原因', type: 'text' ,default: data.data[0].未完成原因,isshow: false,},
+					   { name: '解决办法', label: '解决办法', type: 'text' ,default: data.data[0].解决办法,isshow: false},
+					   { name: '数据类别', label: '数据类别', type: 'text',default: data.data[0].数据类别 ,isshow: false,},
+					   { name: '日期', label: '日期', type: 'text',default: data.data[0].日期 ,isshow: false,},
+		           ],
+		           response: "为了信息，请补全信息："
+		       };
+		   }
+		   return {
+		       needForm: false,
+		       response: JSON.stringify(data.data[0])
+		   };
+		  } catch (error) {
+		    console.error('获取数据时出错:', error);
+		    throw error;
+		  }
+		
+        
+    }
+
+    // Send message handler
+    async  function sendMessage() {
+        const text = messageInput.value.trim();
+        if (!text) return;
+
+        // Add user message
+        chatHistory.push({ text, isUser: true });
+        addMessageToDOM(text, true);
+        saveChatHistory();
+
+        // Clear input
+        messageInput.value = '';
+
+        // Scroll and simulate API request
+        scrollToBottom();
+
+        // Simulate backend request
+        
+            const backendResponse =await simulateBackendRequest(text);
+			console.log(backendResponse.response)
+            if (backendResponse.needForm) {
+                // Show form modal
+                showFormModal(backendResponse.fields);
+                // Add bot message about form
+                chatHistory.push({ text: backendResponse.response, isUser: false });
+                addMessageToDOM(backendResponse.response, false);
+            } else {
+                // Add bot response
+                chatHistory.push({ text: backendResponse.response, isUser: false });
+                addMessageToDOM(backendResponse.response, false);
+            }
+
+            saveChatHistory();
+            scrollToBottom();
+        
+    }
+
+    // Event Listeners
+    sendButton.addEventListener('click', sendMessage);
+
+    messageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    // Form submission
+    infoForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        console.log("111111111111111")
+        // 显示加载状态
+        console.log("111111111111111")
+
+
+        console.log("111111111111111")
+
+        try {
+            const formData = new FormData(infoForm);
+            const formObject = {};
+
+            // 将FormData转换为普通对象
+            for (let [key, value] of formData.entries()) {
+                formObject[key] = value;
+            }
+
+            // 向后台地址 localhost:3000/submit_data 提交表单
+            const response = await fetch('http://localhost:8765/submit_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(formObject)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP错误! 状态码: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            // 成功提交后更新聊天记录
+            const formSummary = Object.entries(formObject)
+                .map(([key, value]) => `${key}: ${value}`)
+                .join(', ');
+
+            chatHistory.push({
+                text: `已提交表单信息：${formSummary}`,
+                isUser: true
+            });
+            addMessageToDOM(`已提交表单信息：${formSummary}`, true);
+
+            // 添加后台返回的消息
+            const backendMessage = result.message || "表单数据已成功提交到服务器！";
+            chatHistory.push({
+                text: backendMessage,
+                isUser: false
+            });
+            addMessageToDOM(backendMessage, false);
+
+            saveChatHistory();
+            scrollToBottom();
+            closeFormModal();
+            infoForm.reset();
+
+        } catch (error) {
+            // 错误处理
+            console.error('表单提交失败:', error);
+
+            const errorMessage = `提交失败: ${error.message}`;
+            chatHistory.push({
+                text: errorMessage,
+                isUser: false
+            });
+            addMessageToDOM(errorMessage, false);
+
+            saveChatHistory();
+            scrollToBottom();
+
+        } finally {
+            // 恢复按钮状态
+            submitFormBtn.innerHTML = originalText;
+            submitFormBtn.disabled = false;
+        }
+    });
+
+
+    // Close modal events
+    closeModal.addEventListener('click', closeFormModal);
+    cancelForm.addEventListener('click', closeFormModal);
+
+    // Close modal when clicking outside
+    window.addEventListener('click', (e) => {
+        if (e.target === formModal) {
+            closeFormModal();
+        }
+    });
+
+    // Initialize the chat when page loads
+    document.addEventListener('DOMContentLoaded', initChat);
+</script>
+</body>
+</html>

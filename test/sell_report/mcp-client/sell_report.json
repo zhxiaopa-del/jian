@@ -1,0 +1,9 @@
+{
+     "mcpServers": {
+       "sell-report-mcp": {
+         "command": "python",
+         "args": ["D:/1work/test/sell_report/mcp/mcp_server.py"]
+       }
+     }
+   }
+   

@@ -1,0 +1,24 @@
+{
+  "table_path": "data\\回款表.xlsx",
+  "headers": [
+    "日期",
+    "公司名",
+    "负责人",
+    "项目名称",
+    "回款金额"
+  ],
+  "template_path": "template\\26年2月份预计回款、合同表26.1.28.xlsx",
+  "branch_sheet_names": [
+    "山东办事处",
+    "徐州办事处",
+    "天津子公司"
+  ],
+  "col_actual_total": 6,
+  "col_actual_detail": 7,
+  "col_actual_branch": 7,
+  "project_order": [
+    "动环项目",
+    "地铁测温",
+    "煤矿项目"
+  ]
+}

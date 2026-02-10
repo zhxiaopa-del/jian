@@ -1,0 +1,26 @@
+# Web框架相关
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
+
+# 数据库相关
+pymysql>=1.1.0
+
+# 数据处理相关
+pandas>=2.0.0
+openpyxl>=3.1.0
+
+# AI/LLM 相关
+openai>=1.0.0
+
+# CORS 支持（FastAPI 内置，但明确列出）
+# fastapi.middleware.cors 已包含在 fastapi 中
+
+# MCP 相关（可选，如果使用 MCP 功能）
+fastmcp>=0.9.0
+langchain>=0.1.0
+langchain-openai>=0.0.5
+langchain-mcp-adapters>=0.1.0
+
+# 其他工具库
+python-dateutil>=2.8.0

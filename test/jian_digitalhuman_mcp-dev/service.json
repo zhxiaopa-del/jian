@@ -1,0 +1,9 @@
+{
+    "吉安大平台MCP服务": {
+        "transport": "sse",
+        "url": "http://10.3.0.15:8000/sse",
+        "headers": {},
+        "timeout": 30,
+        "sse_read_timeout": 30
+    }
+}

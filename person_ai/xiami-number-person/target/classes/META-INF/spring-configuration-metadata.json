@@ -1,0 +1,65 @@
+{
+  "groups": [
+    {
+      "name": "human",
+      "type": "web.digital.human.HumanProperties",
+      "sourceType": "web.digital.human.HumanProperties"
+    },
+    {
+      "name": "human.aliyun",
+      "type": "web.digital.human.HumanProperties$Aliyun",
+      "sourceType": "web.digital.human.HumanProperties",
+      "sourceMethod": "getAliyun()"
+    },
+    {
+      "name": "human.baidu",
+      "type": "web.digital.human.HumanProperties$Baidu",
+      "sourceType": "web.digital.human.HumanProperties",
+      "sourceMethod": "getBaidu()"
+    },
+    {
+      "name": "human.chat",
+      "type": "web.digital.human.HumanProperties$Chat",
+      "sourceType": "web.digital.human.HumanProperties",
+      "sourceMethod": "getChat()"
+    }
+  ],
+  "properties": [
+    {
+      "name": "human.aliyun.access-key-id",
+      "type": "java.lang.String",
+      "sourceType": "web.digital.human.HumanProperties$Aliyun"
+    },
+    {
+      "name": "human.aliyun.access-key-secret",
+      "type": "java.lang.String",
+      "sourceType": "web.digital.human.HumanProperties$Aliyun"
+    },
+    {
+      "name": "human.baidu.api-key",
+      "type": "java.lang.String",
+      "sourceType": "web.digital.human.HumanProperties$Baidu"
+    },
+    {
+      "name": "human.baidu.secret-key",
+      "type": "java.lang.String",
+      "sourceType": "web.digital.human.HumanProperties$Baidu"
+    },
+    {
+      "name": "human.chat.api-key",
+      "type": "java.lang.String",
+      "sourceType": "web.digital.human.HumanProperties$Chat"
+    },
+    {
+      "name": "human.chat.base-url",
+      "type": "java.lang.String",
+      "sourceType": "web.digital.human.HumanProperties$Chat"
+    },
+    {
+      "name": "human.chat.models",
+      "type": "java.util.List<web.digital.human.HumanProperties$Model>",
+      "sourceType": "web.digital.human.HumanProperties$Chat"
+    }
+  ],
+  "hints": []
+}

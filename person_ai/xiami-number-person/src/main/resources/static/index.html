@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8">
+    <title>数字人（H5）</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="shortcut icon" type="image/x-icon" href="logo.png"/>
+    <link rel="stylesheet" href="layui/css/layui.css">
+    <link rel="stylesheet" href="layim/res/layim.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            height: 100%;
+        }
+
+        body {
+            background: url(human/background/bg_1.png) no-repeat center center;
+            background-size: cover;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .header {
+            padding: 15px;
+            text-align: right;
+        }
+
+        .main {
+            display: flex;
+            flex: 1;
+            padding: 5px;
+            text-align: center;
+            align-items: center;
+        }
+
+        .footer {
+            display: flex;
+            padding: 5px;
+            align-items: center;
+        }
+
+        .footer-left {
+            padding: 5px;
+            text-align: center;
+        }
+
+        .footer-center {
+            flex: 1;
+            padding: 5px;
+            text-align: center;
+        }
+
+        .footer-right {
+            padding: 5px;
+            text-align: center;
+        }
+
+        .layui-icon {
+            font-size: 30px;
+            color: black;
+        }
+
+        .layim-chat-main {
+            position: absolute;
+            text-align: left;
+            width: 90%;
+            height: 50%;
+            bottom: 0;
+            right: 0;
+        }
+
+        #human {
+            position: relative;
+            width: 100%;
+            height: 99%;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+<script src="human/fetch.event.source.js"></script>
+<script src="human/audio.media.js"></script>
+<script src="human/marked.min.js"></script>
+<script src="layui/layui.js"></script>
+<script>
+    layui.config({
+        base: 'human/',
+        version: Date.now()
+    }).extend({
+        human: '{/}human/human',
+        tts: '{/}human/baidu.tts',
+        asr: '{/}human/baidu.asr'
+    }).use(['human', 'tts', 'asr'], function () {
+        const audioOptions = {sampleRate: 16000, sampleBits: 16, numberChannels: 1};
+        const audioRecorder = new AudioRecorder(audioOptions);
+        const audioPlayer = new AudioPlayer(audioOptions
+            , function () {
+                layui.human.speak();
+            }
+            , function () {
+                this.onPause();
+                layui.human.standby();
+            });
+
+        const set = layui.dropdown.render({
+            elem: '#set',
+            data: [
+                {title: '场景', child: layui.human.scene},
+                {title: '形象', child: layui.human.human},
+                {title: '音库', child: layui.tts.sound}
+            ],
+            click: function (data) {
+                layui.human.scene.forEach(function (value) {
+                    if (data.title === value.title) {
+                        layui.$('body').css('background', `url(${data.value}) no-repeat center center`);
+                        layui.$('body').css('background-size', 'cover');
+                    }
+                });
+                layui.human.human.forEach(function (value, index) {
+                    if (data.title === value.title) {
+                        layui.human.load(layui.human.human[index]);
+                    }
+                });
+                layui.human.model.forEach(function (value, index) {
+                    if (data.title === value.title) {
+                        layui.human.request.model = layui.human.model[index].value;
+                    }
+                });
+                layui.tts.sound.forEach(function (value, index) {
+                    if (data.title === value.title) {
+                        layui.tts.voice = layui.tts.sound[index].value;
+                    }
+                });
+            }
+        });
+
+        layui.human.init();
+        layui.human.models(function () {
+            set.config.data.push({title: '模型', child: layui.human.model});
+            layui.dropdown.reloadData(set.config.id, {
+                data: set.config.data
+            });
+        });
+
+        layui.$('#canvas').on('click', function () {
+            if (audioPlayer.isPlaying) {
+                layui.layer.msg('正在播放，请先暂停！');
+                return;
+            }
+            layui.human.chat(`你好，我是${layui.human.me.title}。我可以如何帮到你？`, Date.now());
+            layui.tts.open(function (blob) {
+                if (blob) {
+                    audioPlayer.onPush(blob);
+                    return;
+                }
+                layui.tts.send(`你好，我是${layui.human.me.title}。我可以如何帮到你？`);
+                layui.tts.stop();
+            });
+        });
+
+        layui.$('#mike').on('click', function () {
+            if (audioPlayer.isPlaying) {
+                layui.layer.msg('正在播放，请先暂停！');
+                return;
+            }
+            const duration = 30;
+            audioRecorder.open().then(function (stream) {
+                console.log('开始录音...');
+                const loading = layui.layer.msg('录音中...', {
+                    time: 0, icon: 16, shade: 0.3, shadeClose: true,
+                    content: '<span id="loading">录音中...（30秒）<span>',
+                    end: function () {
+                        console.log('停止录音...');
+                        const blob = audioRecorder.pcm();
+                        layui.asr.asr(blob, function (text) {
+                            if (text && text !== '') {
+                                layui.$('#text').val(text);
+                                layui.$('#release').trigger('click');
+                            } else {
+                                layui.layer.msg('我没有听清你在说些什么！');
+                            }
+                        });
+                    }
+                });
+                audioRecorder.start(stream, function (params) {
+                    console.log(params);
+                    layui.$('#loading').html('录音中...（' + (duration - parseInt(params.duration)) + '秒）按下停止');
+                    if (params.duration > duration) {
+                        layui.layer.close(loading);
+                    }
+                });
+            }, function (error) {
+                layui.layer.msg(`麦克风打开失败！（${error.name}:${error.message}）`);
+            });
+        });
+
+        layui.$('#release').on('click', function () {
+            if (layui.$('#text').val() === '') {
+                return;
+            }
+            if (audioPlayer.isPlaying) {
+                layui.layer.msg('正在播放，请先暂停！');
+                return;
+            }
+            layui.human.chat(layui.$('#text').val());
+            layui.tts.open(function (buffer) {
+                if (buffer) {
+                    audioPlayer.onPush(buffer);
+                    return;
+                }
+                const messages = [];
+                const uuid = Date.now();
+                const loading = layui.layer.load(0);
+                layui.human.send(layui.$('#text').val(), function (done, text) {
+                    if (done) {
+                        layui.tts.stop();
+                        layui.layer.close(loading);
+                    }
+                    if (text && text !== '') {
+                        messages.push(text)
+                        layui.tts.send(text);
+                        layui.human.chat(marked.parse(messages.join('')), uuid);
+                    }
+                });
+                layui.$('#text').val('');
+            });
+        });
+
+        layui.$('#pause').on('click', function () {
+            audioPlayer.onDone();
+        });
+    });
+</script>
+<div class="container">
+    <div class="header">
+        <i id="pause" class="layui-icon layui-icon-pause"></i>
+        <i id="set" class="layui-icon layui-icon-set"></i>
+    </div>
+    <div class="main">
+        <div id="human">
+            <div class="layim-chat-main layim-scrollbar">
+                <ul></ul>
+            </div>
+            <canvas id="canvas"></canvas>
+        </div>
+    </div>
+    <div class="footer">
+        <div class="footer-left">
+            <i id="mike" class="layui-icon layui-icon-mike"></i>
+        </div>
+        <div class="footer-center">
+            <label for="text"></label><input id="text" type="text" class="layui-input" placeholder="你可以问我任何问题...">
+        </div>
+        <div class="footer-right">
+            <i id="release" class="layui-icon layui-icon-release"></i>
+        </div>
+    </div>
+</div>
+</body>
+</html>

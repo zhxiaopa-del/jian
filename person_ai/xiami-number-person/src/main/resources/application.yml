@@ -1,0 +1,24 @@
+human:
+  baidu:
+    api-key: MekSuVUM5k4FhdjJhmgsCFJG
+    secret-key: tC1zfu9WyxpccXdrxdwKQunsjEBeusDO
+  aliyun:
+    access-key-id: 2443383
+    access-key-secret: sk-17a051105a5f4d42ab69e169e2cc94d3
+  chat:
+    api-key: sk-8b1e1a434b134c0283c224064e5ebc2a
+    base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    models:
+      - title: qwen3-max
+        value: qwen3-max
+      - title: qwen3-max
+        value: qwen3-max
+
+server:
+  port: 8080
+  tomcat:
+    uri-encoding: UTF-8
+  ssl:
+    enabled: true
+    key-store: classpath:keystore.jks
+    key-store-password: 123456

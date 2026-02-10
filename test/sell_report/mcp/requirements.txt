@@ -1,0 +1,9 @@
+fastmcp>=0.9.0
+pymysql>=1.0.0
+pandas>=2.0.0
+openpyxl>=3.1.0
+openai>=1.0.0
+# LangChain 相关（用于 Agent 工作流）
+langchain>=0.1.0
+langchain-openai>=0.0.5
+langchain-mcp-adapters>=0.1.0
